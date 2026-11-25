@@ -1,0 +1,24 @@
+.game_input {
+  background-color: #a2540f;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 420px;
+  color: #ebd78d;
+  font-family: system-ui, "Segoe UI", Roboto, sans-serif;
+  margin-top: 100px;
+}
+
+.input_field {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 10px 12px;
+  background: inherit;
+  font: inherit;
+  border: 1px solid;
+}
+
+.input_field::placeholder {
+  color: #ebd78d;
+}
