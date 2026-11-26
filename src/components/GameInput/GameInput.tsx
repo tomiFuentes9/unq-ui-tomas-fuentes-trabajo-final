@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { checkWord } from "../../services/wordService";
 import "./GameInput.css";
 
 const formatTime = (total: number): string => {
@@ -30,9 +31,19 @@ export default function GameInput() {
     return () => window.clearInterval(id);
   }, [running]);
 
-  const handleCheck = (newWord: string) => {
+  const handleCheck = async (newWord: string) => {
     if (finished) return;
     // Aca con newWord chequeamos si es valida y la guardamos si es asi sino tiro error
+    const response = await checkWord(newWord);
+    if (response.exists) {
+      handleValidWord();
+      handleReset();
+    }
+  };
+
+  const handleValidWord = () => {
+    // Aca iria la logica de sumar los puntos y agregar la palabra a las ya cargadas
+    console.log("valida");
   };
 
   // para resetear si ingreso una palabra correcta
@@ -46,7 +57,7 @@ export default function GameInput() {
     if (e.key === "Enter" && !running) {
       setRunning(true);
     } else if (e.key === "Enter") {
-      handleReset();
+      handleCheck(value);
     }
   };
 
