@@ -1,68 +1,88 @@
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { checkWord } from "../../services/wordService";
+import Timer from "../Timer/Timer.tsx";
 import "./GameInput.css";
-
-const formatTime = (total: number): string => {
-  const m = Math.floor(total / 60);
-  const s = total % 60;
-  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-};
 
 export default function GameInput() {
   const [value, setValue] = useState("");
-  const [remaining, setRemaining] = useState(15);
+  const [lastWord, setLastWord] = useState("");
+  const [words, setWords] = useState<string[]>([]);
+  const [score, setScore] = useState(0);
+  const [error, setError] = useState("");
+
   const [running, setRunning] = useState(false);
+  const [finished, setFinished] = useState(false);
+  const [resetKey, setResetKey] = useState(0);
 
-  const finished = remaining === 0;
-
-  // Logica timer
-  useEffect(() => {
-    if (!running) return;
-    const id = window.setInterval(() => {
-      setRemaining((prev) => {
-        if (prev <= 1) {
-          window.clearInterval(id);
-          setRunning(false);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => window.clearInterval(id);
-  }, [running]);
-
-  const handleCheck = async (newWord: string) => {
-    if (finished) return;
-    // Aca con newWord chequeamos si es valida y la guardamos si es asi sino tiro error
-    const response = await checkWord(newWord);
-    if (response.exists) {
-      handleValidWord();
-      handleReset();
-    }
-  };
-
-  const handleValidWord = () => {
-    // Aca iria la logica de sumar los puntos y agregar la palabra a las ya cargadas
-    console.log("valida");
-  };
+  const handleFinish = useCallback(() => {
+    setRunning(false);
+    setFinished(true);
+  }, []);
 
   // para resetear si ingreso una palabra correcta
   const handleReset = () => {
     setValue("");
-    setRemaining(15);
-    setRunning(false);
+    setResetKey((prev) => prev + 1);
+    setRunning(true);
+  };
+
+  const handleValidWord = (word: string) => {
+    setScore((prev) => prev + word.length);
+    setWords((prev) => [...prev, word]);
+    setLastWord(word);
+    handleReset();
+  };
+
+  const startsWithLastLetter = (word: string) => {
+    if (!lastWord) return true;
+    return word[0] === lastWord[lastWord.length - 1];
+  };
+
+  const alredyUsed = (word: string) => {
+    return words.find((w) => w === word);
+  };
+
+  const handleCheck = async (word: string) => {
+    if (finished) return;
+
+    // para no tener problemas con acentos
+    const newWord = word.trim().toLowerCase();
+    if (!newWord) return;
+
+    if (!startsWithLastLetter(newWord)) {
+      setError(
+        `La palabra no respeta la regla de encadenamiento. Tiene que empezar con "${lastWord[lastWord.length - 1]}"`,
+      );
+      return;
+    }
+
+    if (alredyUsed(newWord)) {
+      setError(`La palabra ya fue utilizada"`);
+      return;
+    }
+
+    const response = await checkWord(newWord);
+
+    if (response.exists) {
+      setError("");
+      handleValidWord(newWord);
+    } else {
+      setError("La palabra no existe");
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && !running) {
-      setRunning(true);
-    } else if (e.key === "Enter") {
-      handleCheck(value);
-    }
+    if (e.key === "Enter") handleCheck(value);
   };
 
   return (
     <div className="game_input">
+      <div className="pointsContainer">
+        <span className="points">Puntos: {score}</span>
+      </div>
+
+      {error && <p className="input_error">{error}</p>}
+
       <input
         className="input_field"
         type="text"
@@ -74,9 +94,12 @@ export default function GameInput() {
         autoComplete="off"
       />
 
-      <div>
-        <span>{formatTime(remaining)}</span>
-      </div>
+      <Timer
+        duration={15}
+        running={running}
+        resetKey={resetKey}
+        onFinish={handleFinish}
+      />
     </div>
   );
 }

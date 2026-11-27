@@ -22,3 +22,15 @@
 .input_field::placeholder {
   color: #ebd78d;
 }
+
+.pointsContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.points {
+  font-size: 25px;
+  font-weight: 300;
+}
